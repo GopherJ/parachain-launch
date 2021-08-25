@@ -297,11 +297,8 @@ const generateParachainGenesisFile = (
   const runtime = spec.genesis.runtime;
   runtime.parachainInfo.parachainId = id;
 
-  const endowed = [];
-
   if (chain.sudo && runtime.sudo) {
     runtime.sudo.key = getAddress(chain.sudo);
-    endowed.push(runtime.sudo.key);
   }
 
   if (chain.collators) {
@@ -313,22 +310,6 @@ const generateParachainGenesisFile = (
         return [addr, addr, { aura: addr }];
       }),
     });
-    endowed.push(...invulnerables);
-  }
-
-  if (endowed.length) {
-    const decimals = _.get(spec, 'properties.tokenDecimals[0]') || _.get(spec, 'properties.tokenDecimals') || 15;
-    const balances: [string, number][] =
-      _.get(runtime, 'balances.balances') || _.get(runtime, 'palletBalances.balances') || [];
-    const balObj: { [index: string]: number } = {};
-    for (const [addr, val] of balances) {
-      balObj[addr] = val;
-    }
-    for (const addr of endowed) {
-      // TODO: https://github.com/open-web3-stack/parachain-launch/issues/5
-      balObj[addr] = (balObj[addr] || 0) + Math.pow(10, decimals) * 1000;
-    }
-    setParachainRuntimeValue(runtime, 'balances', { balances: Object.entries(balObj).map((x) => x) });
   }
 
   fs.writeFileSync(filepath, JSON.stringify(spec, null, 2));
